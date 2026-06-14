@@ -6,9 +6,11 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.tagged.CircuitBreakerMetricNames;
 import org.springframework.stereotype.Service;
 
+import static com.example.fintenderstabilitybreaker.services.SysParamService.changeIgnoreFns;
+import static com.example.fintenderstabilitybreaker.services.SysParamService.isEnabled;
+
 
 @Service
-
 public class DepositFnsService {
 
     private final CircuitBreaker fnsCircuitBreaker;
@@ -29,8 +31,12 @@ public class DepositFnsService {
                 // Если пришел CANNOT_CHECK — мы бросаем исключение наружу лямбды.
                 // CircuitBreaker перехватит его, засчитает как ошибку, и когда их наберется 70%,
                 // он САМ переключит тумблер и опубликует событие в DepositFnsConsumer!
-                if (fnsStatus == CheckStatusType.CANNOT_CHECK) {
-                    throw new RuntimeException("Фиксация сбоя ФНС: CANNOT_CHECK");
+                if (fnsStatus == CheckStatusType.CANNOT_CHECK && !isEnabled() && changeIgnoreFns(true)) {
+
+                }
+
+                if (fnsStatus != CheckStatusType.CANNOT_CHECK && isEnabled() && changeIgnoreFns(false)) {
+
                 }
 
                 // Логика, если статус хороший (OK, FOUND, NOT_FOUND)

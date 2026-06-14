@@ -1,6 +1,5 @@
 package com.example.fintenderstabilitybreaker.services;
 
-import com.example.fintenderstabilitybreaker.model.enums.CheckStatusType;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.event.CircuitBreakerOnStateTransitionEvent;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,7 @@ public class DepositFnsConsumer {
         CircuitBreaker.StateTransition stateTransition = event.getStateTransition();
         CircuitBreaker.State toState = stateTransition.getToState();
 
-        if (toState == CircuitBreaker.State.OPEN){
+        if (toState == CircuitBreaker.State.OPEN) {
             System.out.printf("Брекер перешел из состояния %s в Состояние %s", stateTransition.getFromState(), stateTransition.getToState());
         }
 
