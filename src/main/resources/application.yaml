@@ -1,3 +1,12 @@
 spring:
   application:
     name: FintenderStabilityBreaker
+
+
+resilience4j:
+  ratelimiter:
+    instances:
+      deposit-recheck-fns:
+        limitForPeriod: 5          # максимум 5 запросов
+        limitRefreshPeriod: 25s     # за 1 секунду
+        timeoutDuration: 0s        # сразу отсекаем, не ждём

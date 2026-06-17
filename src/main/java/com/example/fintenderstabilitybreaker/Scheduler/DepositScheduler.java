@@ -1,5 +1,6 @@
 package com.example.fintenderstabilitybreaker.Scheduler;
 
+import com.example.fintenderstabilitybreaker.limiting.DepositRecheckService;
 import com.example.fintenderstabilitybreaker.model.enums.CheckStatusType;
 import com.example.fintenderstabilitybreaker.services.DepositFnsService;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,14 +10,16 @@ import org.springframework.stereotype.Service;
 public class DepositScheduler {
 
     private final DepositFnsService depositFnsService;
+    private final DepositRecheckService depositRecheckService;
 
-    public DepositScheduler(DepositFnsService depositFnsService) {
+    public DepositScheduler(DepositFnsService depositFnsService, DepositRecheckService depositRecheckService) {
         this.depositFnsService = depositFnsService;
+        this.depositRecheckService = depositRecheckService;
     }
 
-    @Scheduled(cron = "* * * * * *")
+    @Scheduled(cron = "* 12 17 * * *")
     public void run() {
-        for (int i = 0; i < 20; i++) {
+       /* for (int i = 0; i < 20; i++) {
             if (i < 7) {
                 depositFnsService.execute(CheckStatusType.CANNOT_CHECK);
             }
@@ -25,7 +28,9 @@ public class DepositScheduler {
                 depositFnsService.execute(CheckStatusType.FOUND);
             }
 
-        }
+        }*/
+
+        depositRecheckService.executeRecheck();
 
     }
 }
