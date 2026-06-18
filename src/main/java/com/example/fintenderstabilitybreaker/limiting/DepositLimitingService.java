@@ -23,7 +23,6 @@ public class DepositLimitingService {
         fintenderService.executeRecheck(depositDto);
     }
 
-    // ИСПРАВЛЕНО: аргументы строго повторяют основной метод + исключение
     public void fallbackMethod(DepositDto depositDto, RequestNotPermitted exception){
         System.out.printf("[ЗАПРОС ЗАБЛОКИРОВАН] Дата и время: %s. Запрос для UUID %s пропущен. Причина: %s\n",
                 LocalDateTime.now(), depositDto.uuid(), exception.getMessage());

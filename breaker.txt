@@ -1,0 +1,56 @@
+# application.yml
+
+resilience4j:
+circuitbreaker:
+instances:
+deposit-fns-circuit-breaker:
+
+```
+    # Тип окна статистики.
+    # COUNT_BASED = анализируем фиксированное количество последних вызовов.
+    slidingWindowType: COUNT_BASED
+
+    # Размер окна статистики.
+    # Храним информацию только о последних 10 вызовах.
+    slidingWindowSize: 10
+
+    # Минимальное количество вызовов перед началом анализа ошибок.
+    # Пока не накопится 4 вызова, CircuitBreaker не будет открываться.
+    minimumNumberOfCalls: 4
+
+    # Порог процента ошибок для перехода в OPEN.
+    # Если среди последних вызовов доля ошибок >= 70%,
+    # то предохранитель откроется.
+    failureRateThreshold: 70
+
+    # Время нахождения в OPEN.
+    # Все запросы будут блокироваться в течение 30 секунд.
+    waitDurationInOpenState: 30s
+
+    # Количество тестовых вызовов в HALF_OPEN.
+    # После OPEN разрешаем выполнить 3 пробных запроса.
+    permittedNumberOfCallsInHalfOpenState: 3
+
+    # Максимальное время нахождения в HALF_OPEN.
+    # Если за 10 секунд не наберется 3 тестовых вызова,
+    # CircuitBreaker вернется обратно в OPEN.
+    maxWaitDurationInHalfOpenState: 10s
+
+    # Автоматический переход OPEN -> HALF_OPEN.
+    # Через waitDurationInOpenState Resilience4j сам начнет проверку.
+    automaticTransitionFromOpenToHalfOpenEnabled: true
+```
+@Bean
+public CircuitBreaker fnsCircuitBreaker(
+CircuitBreakerRegistry registry,
+DepositFnsConsumer depositFnsConsumer) {
+
+CircuitBreaker circuitBreaker =
+        registry.circuitBreaker("deposit-fns-circuit-breaker");
+
+circuitBreaker.getEventPublisher()
+        .onStateTransition(depositFnsConsumer::handleStateTransition);
+
+return circuitBreaker;
+
+}

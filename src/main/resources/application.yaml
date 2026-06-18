@@ -7,6 +7,6 @@ resilience4j:
   ratelimiter:
     instances:
       deposit-recheck-fns:
-        limitForPeriod: 5          # максимум 5 запросов
-        limitRefreshPeriod: 25s     # за 1 секунду
-        timeoutDuration: 0s        # сразу отсекаем, не ждём
+        limitForPeriod: 50         # Максимум 50 запросов к сервису ФТ за один период.
+        limitRefreshPeriod: 1m     # Период обновления лимита. Каждую минуту счетчик разрешений сбрасывается и снова становится доступно 50 запросов.
+        timeoutDuration: 5m        # Максимальное время ожидания свободного permit. Если лимит исчерпан, поток будет ожидать до 5 минут.
