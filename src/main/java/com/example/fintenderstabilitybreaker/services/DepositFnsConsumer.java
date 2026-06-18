@@ -7,6 +7,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class DepositFnsConsumer {
 
+    private final CommonParamSysService commonParamSysService;
+    private final ServiceTest serviceTest;
+
+    public DepositFnsConsumer(CommonParamSysService commonParamSysService, ServiceTest serviceTest) {
+        this.commonParamSysService = commonParamSysService;
+        this.serviceTest = serviceTest;
+    }
+
     /**
      * МЕТОД, КОТОРЫЙ ПРИНИМАЕТ EVENT.
      * Он вызывается автоматически, когда Resilience4j меняет фазу.
@@ -35,47 +43,44 @@ public class DepositFnsConsumer {
 
         CircuitBreaker.State fromState = transition.getFromState();
 
-        CircuitBreaker.State toState = transition.getToState();
+        if(transition == CircuitBreaker.StateTransition.CLOSED_TO_OPEN && !commonParamSysService.isEnabled()){
+            if (!commonParamSysService.isEnabled()) {
+                log.error("CircuitBreaker ФТ открыт. Переход: {} -> {}. Сервис ФНС признан недоступным.", fromState, toState);
+                serviceTest.handleDisabledService();
+            }
+            return;
+        }
+
+        if(transition == CircuitBreaker.StateTransition.HALF_OPEN_TO_CLOSED && commonParamSysService.isEnabled()){
+            if (!commonParamSysService.isEnabled()) {
+                log.info("CircuitBreaker ФТ закрыт. Переход: {} -> {}. Сервис ФНС снова доступен.", fromState, toState);
+                serviceTest.handleEnabledService();
+            }
+            return;
+        }
+
+        log.info("CircuitBreaker изменил состояние: {} -> {}", fromState, toState);
 
         switch (transition) {
+            case CLOSED_TO_OPEN -> {
 
-            case CLOSED_TO_OPEN -> log.error(
-                    "CircuitBreaker ФТ открыт. " +
-                            "Переход: {} -> {}. " +
-                            "ФТ признан недоступным.",
-                    fromState,
-                    toState
-            );
+            }
 
-            case OPEN_TO_HALF_OPEN -> log.warn(
-                    "CircuitBreaker ФТ перешел в HALF_OPEN. " +
-                            "Переход: {} -> {}. " +
-                            "Начинаем тестирование доступности ФТ.",
-                    fromState,
-                    toState
-            );
+            case HALF_OPEN_TO_CLOSED -> {
+                if (commonParamSysService.isEnabled()) {
+                    log.info("CircuitBreaker ФТ закрыт. Переход: {} -> {}. Сервис ФНС снова доступен.", fromState, toState);
+                    serviceTest.handleEnabledService();
+                }
+            }
 
-            case HALF_OPEN_TO_CLOSED -> log.info(
-                    "CircuitBreaker ФТ закрыт. " +
-                            "Переход: {} -> {}. " +
-                            "ФТ снова доступен.",
-                    fromState,
-                    toState
-            );
+            case OPEN_TO_HALF_OPEN -> {
+                log.warn("CircuitBreaker ФТ перешел в HALF_OPEN. Переход: {} -> {}. Начинаем тестирование доступности сервиса ФНС.", fromState, toState);
+            }
 
-            case HALF_OPEN_TO_OPEN -> log.error(
-                    "CircuitBreaker ФТ снова открыт. " +
-                            "Переход: {} -> {}. " +
-                            "Тестовые вызовы завершились ошибкой.",
-                    fromState,
-                    toState
-            );
-
-            default -> log.info(
-                    "CircuitBreaker изменил состояние: {} -> {}",
-                    fromState,
-                    toState
-            );
+            case HALF_OPEN_TO_OPEN -> {
+                log.error("CircuitBreaker ФТ снова открыт. Переход: {} -> {}. Тестовые вызовы завершились ошибкой.", fromState, toState);
+            }
+            default -> log.info("CircuitBreaker изменил состояние: {} -> {}", fromState, toState);
         }
     }
 
